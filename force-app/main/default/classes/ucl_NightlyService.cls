@@ -131,6 +131,9 @@ public with sharing class ucl_NightlyService implements Schedulable {
     List<LegalAdvisorResponse> legalAdvisors
   ) {
     List<Client__c> clientRecords = new List<Client__c>();
+    List<String> clientNumbers = new List<String>(); //new Client Records' numbers, for later validation
+
+    //fetch client numbers that already exist in the org
     Set<String> existingClientNumbers = new Set<String>();
     for (Client__c existingClient : [SELECT Client_Number__c FROM Client__c]) {
       existingClientNumbers.add(existingClient.Client_Number__c);
@@ -151,7 +154,14 @@ public with sharing class ucl_NightlyService implements Schedulable {
             clientExists
           );
           clientRecords.add(newClient);
+		  clientNumbers.add(newClient.Client_Number__c);
         }
+      }
+    }
+    for(String existingClient : existingClientNumbers){
+      if(!clientNumbers.contains(existingClient)){
+        Client__c client = returnExistingClient(existingClient);
+        delete client; //if an existing client is no longer coming in the JSON file, it has to be deleted from the Org.
       }
     }
     upsert clientRecords;
