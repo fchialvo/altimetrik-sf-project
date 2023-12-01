@@ -130,6 +130,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
     List<Legal_Advisor__c> enabledLegalAdvisors,
     List<LegalAdvisorResponse> legalAdvisors
   ) {
+    Quiddity quiddityValue = Request.getCurrent().getQuiddity(); // know if the client is updated by an admin in the Clients record page
     List<Client__c> clientRecords = new List<Client__c>();
     List<String> clientNumbers = new List<String>(); //new Client Records' numbers, for later validation
 
@@ -158,12 +159,20 @@ public with sharing class ucl_NightlyService implements Schedulable {
         }
       }
     }
-    for(String existingClient : existingClientNumbers){
-      if(!clientNumbers.contains(existingClient)){
-        Client__c client = returnExistingClient(existingClient);
-        delete client; //if an existing client is no longer coming in the JSON file, it has to be deleted from the Org.
+    switch on quiddityValue {
+      when VF {
+        upsert clientRecords;
+      }
+      when else {
+        for(String existingClient : existingClientNumbers){
+          if(!clientNumbers.contains(existingClient)){
+            Client__c client = returnExistingClient(existingClient);
+            delete client; //if an existing client is no longer coming in the JSON file, it has to be deleted from the Org.
+          }
+        }      
       }
     }
+    
     upsert clientRecords;
   }
 
