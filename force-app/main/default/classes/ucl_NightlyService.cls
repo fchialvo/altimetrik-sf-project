@@ -88,19 +88,23 @@ public with sharing class ucl_NightlyService implements Schedulable {
     }
 
     for (LegalAdvisorResponse legalAdvisor : legalAdvisors) {
+      Boolean legalAdvisorExists = existingLegalAdvisors.contains(
+        legalAdvisor.AccountNumber
+      );
       if (legalAdvisor.AccountStatus == 'Disabled') {
-        Boolean enabledLegalAdvisorExists = existingLegalAdvisors.contains(
-          legalAdvisor.AccountNumber
-        );
-        if (enabledLegalAdvisorExists) {
-          Legal_Advisor__c newLegalAdvisor = createLegalAdvisorRecord(
-            legalAdvisor
+        if (legalAdvisorExists) {
+          // if Account Status is now Disabled but the record already exists in the org
+          Legal_Advisor__c newLegalAdvisor = createOrUpdateLegalAdvisorRecord(
+            legalAdvisor,
+            legalAdvisorExists
           );
           legalAdvisorRecords.add(newLegalAdvisor);
         }
       } else {
-        Legal_Advisor__c newLegalAdvisor = createLegalAdvisorRecord(
-          legalAdvisor
+        // if Account Status is Enabled
+        Legal_Advisor__c newLegalAdvisor = createOrUpdateLegalAdvisorRecord(
+          legalAdvisor,
+          legalAdvisorExists
         );
         legalAdvisorRecords.add(newLegalAdvisor);
       }
@@ -109,23 +113,24 @@ public with sharing class ucl_NightlyService implements Schedulable {
     upsert legalAdvisorRecords Legal_Advisor__c.Account_Number__c;
   }
 
-  private static Legal_Advisor__c createLegalAdvisorRecord(
-    LegalAdvisorResponse legalAdvisor
+  private static Legal_Advisor__c createOrUpdateLegalAdvisorRecord(
+    LegalAdvisorResponse legalAdvisor,
+    Boolean legalAdvisorExists
   ) {
-    if (legalAdvisor.AccountStatus == 'Enabled') {
-      Legal_Advisor__c newLegalAdvisor = new Legal_Advisor__c();
-      newLegalAdvisor.Account_Name__c = legalAdvisor.AccountName;
-      newLegalAdvisor.Name = legalAdvisor.AccountName;
-      newLegalAdvisor.Account_Number__c = legalAdvisor.AccountNumber;
-      newLegalAdvisor.Account_Status__c = legalAdvisor.AccountStatus;
-      newLegalAdvisor.As_of_Date__c = Date.parse(legalAdvisor.AsOfDate);
-      return newLegalAdvisor;
-    }
-    return null;
+    Legal_Advisor__c newLegalAdvisor = legalAdvisorExists
+      ? returnExistingLegalAdvisor(legalAdvisor.AccountNumber)
+      : new Legal_Advisor__c();
+
+    newLegalAdvisor.Account_Name__c = legalAdvisor.AccountName;
+    newLegalAdvisor.Name = legalAdvisor.AccountName;
+    newLegalAdvisor.Account_Number__c = legalAdvisor.AccountNumber;
+    newLegalAdvisor.Account_Status__c = legalAdvisor.AccountStatus;
+    newLegalAdvisor.As_of_Date__c = Date.parse(legalAdvisor.AsOfDate);
+    return newLegalAdvisor;
   }
 
   // CLIENTS
-  
+
   private static void upsertClientRecords(
     List<Legal_Advisor__c> enabledLegalAdvisors,
     List<LegalAdvisorResponse> legalAdvisors
@@ -155,7 +160,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
             clientExists
           );
           clientRecords.add(newClient);
-		  clientNumbers.add(newClient.Client_Number__c);
+          clientNumbers.add(newClient.Client_Number__c);
         }
       }
     }
@@ -164,15 +169,14 @@ public with sharing class ucl_NightlyService implements Schedulable {
         upsert clientRecords;
       }
       when else {
-        for(String existingClient : existingClientNumbers){
-          if(!clientNumbers.contains(existingClient)){
+        for (String existingClient : existingClientNumbers) {
+          if (!clientNumbers.contains(existingClient)) {
             Client__c client = returnExistingClient(existingClient);
             delete client; //if an existing client is no longer coming in the JSON file, it has to be deleted from the Org.
           }
-        }      
+        }
       }
     }
-    
     upsert clientRecords;
   }
 
@@ -216,7 +220,6 @@ public with sharing class ucl_NightlyService implements Schedulable {
   private static Client__c returnExistingClient(String clientNumber) {
     List<Client__c> existingClient = [
       SELECT
-        Id,
         Client_Number__c,
         First_Name__c,
         Last_Name__c,
@@ -229,6 +232,23 @@ public with sharing class ucl_NightlyService implements Schedulable {
     ];
 
     return existingClient[0];
+  }
+  private static Legal_Advisor__c returnExistingLegalAdvisor(
+    String accountNumber
+  ) {
+    List<Legal_Advisor__c> existingLegalAdvisor = [
+      SELECT
+        Account_Name__c,
+        Name,
+        Account_Number__c,
+        Account_Status__c,
+        As_of_date__c,
+        Number_Of_Clients__c
+      FROM Legal_Advisor__c
+      WHERE Account_Number__c = :accountNumber
+      LIMIT 1
+    ];
+    return existingLegalAdvisor[0];
   }
 
   private static void handleException(Exception e) {
