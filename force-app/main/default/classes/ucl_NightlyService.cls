@@ -242,8 +242,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
         Name,
         Account_Number__c,
         Account_Status__c,
-        As_of_date__c,
-        Number_Of_Clients__c
+        As_of_date__c
       FROM Legal_Advisor__c
       WHERE Account_Number__c = :accountNumber
       LIMIT 1
