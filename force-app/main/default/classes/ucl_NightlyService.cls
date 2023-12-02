@@ -36,13 +36,23 @@ public with sharing class ucl_NightlyService implements Schedulable {
         upsertLegalAdvisorRecords(legalAdvisors);
 
         // Retrieve enabled Legal Advisors
-        List<Legal_Advisor__c> enabledLegalAdvisors = [
-          SELECT Id, Account_Number__c, Account_Status__c
+        Set<String> enabledLegalAdvisorNumbers = new Set<String>();
+        for (Legal_Advisor__c enabledLegalAdvisor : [
+          SELECT Account_Number__c
           FROM Legal_Advisor__c
           WHERE Account_Status__c = 'Enabled'
-        ];
+        ]) {
+          enabledLegalAdvisorNumbers.add(enabledLegalAdvisor.Account_Number__c);
+        }
+
+        List<LegalAdvisorResponse> enabledLegalAdvisors = new List<LegalAdvisorResponse>();
+        for (LegalAdvisorResponse legalAdvisor : legalAdvisors) {
+          if (enabledLegalAdvisorNumbers.contains(legalAdvisor.AccountNumber)) {
+            enabledLegalAdvisors.add(legalAdvisor);
+          }
+        }
         // Upsert Clients for enabled Legal Advisors
-        upsertClientRecords(enabledLegalAdvisors, legalAdvisors);
+        upsertClientRecords(enabledLegalAdvisors);
       }
     } catch (Exception e) {
       handleException(e);
@@ -94,32 +104,28 @@ public with sharing class ucl_NightlyService implements Schedulable {
       if (legalAdvisor.AccountStatus == 'Disabled') {
         if (legalAdvisorExists) {
           // if Account Status is now Disabled but the record already exists in the org
-          Legal_Advisor__c newLegalAdvisor = createOrUpdateLegalAdvisorRecord(
-            legalAdvisor,
-            legalAdvisorExists
+          Legal_Advisor__c newLegalAdvisor = createLegalAdvisorRecord(
+            legalAdvisor
           );
           legalAdvisorRecords.add(newLegalAdvisor);
         }
-      } else {
+      } else if (legalAdvisor.AccountStatus == 'Enabled') {
         // if Account Status is Enabled
-        Legal_Advisor__c newLegalAdvisor = createOrUpdateLegalAdvisorRecord(
-          legalAdvisor,
-          legalAdvisorExists
+        Legal_Advisor__c newLegalAdvisor = createLegalAdvisorRecord(
+          legalAdvisor
         );
         legalAdvisorRecords.add(newLegalAdvisor);
       }
     }
 
-    upsert legalAdvisorRecords Legal_Advisor__c.Account_Number__c;
+    
+    upsert legalAdvisorRecords Account_Number__c;
   }
 
-  private static Legal_Advisor__c createOrUpdateLegalAdvisorRecord(
-    LegalAdvisorResponse legalAdvisor,
-    Boolean legalAdvisorExists
+  private static Legal_Advisor__c createLegalAdvisorRecord(
+    LegalAdvisorResponse legalAdvisor
   ) {
-    Legal_Advisor__c newLegalAdvisor = legalAdvisorExists
-      ? returnExistingLegalAdvisor(legalAdvisor.AccountNumber)
-      : new Legal_Advisor__c();
+    Legal_Advisor__c newLegalAdvisor = new Legal_Advisor__c();
 
     newLegalAdvisor.Account_Name__c = legalAdvisor.AccountName;
     newLegalAdvisor.Name = legalAdvisor.AccountName;
@@ -132,63 +138,59 @@ public with sharing class ucl_NightlyService implements Schedulable {
   // CLIENTS
 
   private static void upsertClientRecords(
-    List<Legal_Advisor__c> enabledLegalAdvisors,
     List<LegalAdvisorResponse> legalAdvisors
   ) {
     Quiddity quiddityValue = Request.getCurrent().getQuiddity(); // know if the client is updated by an admin in the Clients record page
-    List<Client__c> clientRecords = new List<Client__c>();
-    List<String> clientNumbers = new List<String>(); //new Client Records' numbers, for later validation
+    List<Client__c> newClientRecords = new List<Client__c>();
 
     //fetch client numbers that already exist in the org
-    Set<String> existingClientNumbers = new Set<String>();
-    for (Client__c existingClient : [SELECT Client_Number__c FROM Client__c]) {
-      existingClientNumbers.add(existingClient.Client_Number__c);
+    List<Client__c> existingClients = new List<Client__c>();
+    for (Client__c existingClient : [
+      SELECT
+        Client_Number__c,
+        First_Name__c,
+        Last_Name__c,
+        Email__c,
+        Phone__c,
+        Address__c,
+        External_Id__c
+      FROM Client__c
+    ]) {
+      existingClients.add(existingClient);
     }
 
     for (LegalAdvisorResponse legalAdvisor : legalAdvisors) {
-      if (
-        isLegalAdvisorEnabled(enabledLegalAdvisors, legalAdvisor.AccountNumber)
-      ) {
+      {
         for (ClientResponse client : legalAdvisor.Clients) {
           // Create new client or update existing client
-          Boolean clientExists = existingClientNumbers.contains(
-            client.ClientNumber
-          );
-          Client__c newClient = createOrUpdateClientRecord(
-            legalAdvisor,
-            client,
-            clientExists
-          );
-          clientRecords.add(newClient);
-          clientNumbers.add(newClient.Client_Number__c);
+          Client__c newClient = createClientRecord(legalAdvisor, client);
+          newClientRecords.add(newClient);
         }
       }
     }
     switch on quiddityValue {
       when VF {
-        upsert clientRecords;
+        upsert newClientRecords;
       }
       when else {
-        for (String existingClient : existingClientNumbers) {
-          if (!clientNumbers.contains(existingClient)) {
-            Client__c client = returnExistingClient(existingClient);
-            delete client; //if an existing client is no longer coming in the JSON file, it has to be deleted from the Org.
+        List<Client__c> clientsToDelete = new List<Client__c>();
+        for (Client__c existingClient : existingClients) {
+          if (!newClientRecords.contains(existingClient)) {
+            clientsToDelete.add(existingClient); //if an existing client is no longer coming in the JSON file, it has to be deleted from the org.
           }
         }
+        delete clientsToDelete;
       }
     }
-    upsert clientRecords;
+    upsert newClientRecords External_Id__c;
   }
 
-  private static Client__c createOrUpdateClientRecord(
+  private static Client__c createClientRecord(
     LegalAdvisorResponse legalAdvisor,
-    ClientResponse client,
-    Boolean clientExists
+    ClientResponse client
   ) {
-    // create a new client or update existing
-    Client__c newClient = clientExists
-      ? returnExistingClient(client.ClientNumber)
-      : new Client__c();
+    // create a new client
+    Client__c newClient = new Client__c();
 
     newClient.First_Name__c = client.FirstName;
     newClient.Last_Name__c = client.LastName;
@@ -197,6 +199,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
     newClient.Phone__c = client.Phone;
     newClient.Address__c = client.Address;
     newClient.Client_Number__c = client.ClientNumber;
+    newClient.External_Id__c = legalAdvisor.AccountNumber + client.ClientNumber;
     newClient.Legal_Advisor__r = new Legal_Advisor__c(
       Account_Number__c = legalAdvisor.AccountNumber
     );
@@ -215,39 +218,6 @@ public with sharing class ucl_NightlyService implements Schedulable {
       }
     }
     return false;
-  }
-
-  private static Client__c returnExistingClient(String clientNumber) {
-    List<Client__c> existingClient = [
-      SELECT
-        Client_Number__c,
-        First_Name__c,
-        Last_Name__c,
-        Email__c,
-        Phone__c,
-        Address__c
-      FROM Client__c
-      WHERE Client_Number__c = :clientNumber
-      LIMIT 1
-    ];
-
-    return existingClient[0];
-  }
-  private static Legal_Advisor__c returnExistingLegalAdvisor(
-    String accountNumber
-  ) {
-    List<Legal_Advisor__c> existingLegalAdvisor = [
-      SELECT
-        Account_Name__c,
-        Name,
-        Account_Number__c,
-        Account_Status__c,
-        As_of_date__c
-      FROM Legal_Advisor__c
-      WHERE Account_Number__c = :accountNumber
-      LIMIT 1
-    ];
-    return existingLegalAdvisor[0];
   }
 
   private static void handleException(Exception e) {

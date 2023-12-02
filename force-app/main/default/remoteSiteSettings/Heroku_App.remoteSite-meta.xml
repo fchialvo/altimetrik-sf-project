@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Universal Containers Lawyers&apos; Heroku site, where they keep all the Clients and Legal Advisors data.</description>
+    <disableProtocolSecurity>false</disableProtocolSecurity>
+    <isActive>true</isActive>
+    <url>https://altimetrik-bootcamp.herokuapp.com</url>
+</RemoteSiteSetting>
