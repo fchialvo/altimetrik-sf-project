@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Profile xmlns="http://soap.sforce.com/2006/04/metadata">
     <classAccesses>
-        <apexClass>TestDataFactory</apexClass>
+        <apexClass>ucl_DeleteErrorLogs</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_ErrorMock</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -14,6 +18,10 @@
     </classAccesses>
     <classAccesses>
         <apexClass>ucl_NightlyServiceTest</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_TestDataFactory</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <custom>false</custom>
@@ -40,6 +48,26 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Client__c.Phone__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Error_Log__c.Exception_Type__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Error_Log__c.Message__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Error_Log__c.StackTrace__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Error_Log__c.Timestamp__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -71,6 +99,9 @@
         <layout>Client__c-Formato Client</layout>
     </layoutAssignments>
     <layoutAssignments>
+        <layout>Error_Log__c-Error Log Layout</layout>
+    </layoutAssignments>
+    <layoutAssignments>
         <layout>Legal_Advisor__c-Formato Legal Advisor</layout>
     </layoutAssignments>
     <objectPermissions>
@@ -80,6 +111,15 @@
         <allowRead>true</allowRead>
         <modifyAllRecords>true</modifyAllRecords>
         <object>Client__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>Error_Log__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
     <objectPermissions>

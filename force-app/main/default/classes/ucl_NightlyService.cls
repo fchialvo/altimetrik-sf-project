@@ -20,7 +20,8 @@ public with sharing class ucl_NightlyService implements Schedulable {
     try {
       processData();
     } catch (Exception e) {
-      //implement error handling
+    	System.debug('Caught Exception: ' + e.getMessage());
+      	handleException(e);
     }
   }
 
@@ -29,7 +30,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
       String endpoint = 'https://altimetrik-bootcamp.herokuapp.com/LegalAccounts';
       HttpResponse response = fetchData(endpoint);
 
-      if (response.getStatusCode() == 200) {
+      if (response.getStatusCode() == 200) {	
         List<LegalAdvisorResponse> legalAdvisors = parseData(
           response.getBody()
         );
@@ -136,11 +137,13 @@ public with sharing class ucl_NightlyService implements Schedulable {
   }
 
   // CLIENTS
+  @TestVisible
+  private static Quiddity uploadedBy;
 
   private static void upsertClientRecords(
     List<LegalAdvisorResponse> legalAdvisors
   ) {
-    Quiddity quiddityValue = Request.getCurrent().getQuiddity(); // know if the client is updated by an admin in the Clients record page
+    uploadedBy = Request.getCurrent().getQuiddity(); // know if the client is being uploaded by an admin in the Clients record page
     List<Client__c> newClientRecords = new List<Client__c>();
 
     //fetch client numbers that already exist in the org
@@ -168,7 +171,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
         }
       }
     }
-    switch on quiddityValue {
+    switch on uploadedBy {
       when VF {
         upsert newClientRecords;
       }
@@ -220,10 +223,35 @@ public with sharing class ucl_NightlyService implements Schedulable {
     return false;
   }
 
-  private static void handleException(Exception e) {
-    // Log the entire exception, including the stack trace
-    System.debug(LoggingLevel.ERROR, e);
-    // Handle exceptions (log, throw, or propagate)
-    // You might want to log the exception or throw it depending on your use case
-  }
+    
+   private static void handleException(Exception e) {
+        // Log the exception
+        System.debug(LoggingLevel.ERROR, e);
+
+        // Log the error message in a custom object for easy access by the business team
+        logError(e);
+
+        // Send an email to the system administrator
+        sendErrorEmail(e.getMessage());
+    }
+
+    private static void logError(Exception e) {
+        Error_Log__c errorLog = new Error_Log__c();
+        errorLog.Message__c = e.getMessage();
+        errorLog.Exception_Type__c = e.getTypeName();
+        errorLog.StackTrace__c =  e.getStackTraceString();
+        errorLog.Timestamp__c = DateTime.now();
+        // Example debug statements
+        insert errorLog;
+    }
+
+    private static void sendErrorEmail(String errorMessage) {
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        String[] toAddresses = new String[] {'admin@example.com'}; // Change to the actual administrator's email address
+        mail.setToAddresses(toAddresses);
+        mail.setSubject('Error in ucl_NightlyService');
+        mail.setPlainTextBody('An error occurred in the ucl_NightlyService:\n\n' + errorMessage);
+
+        Messaging.sendEmail(new Messaging.SingleEmailMessage[]{mail});
+    }
 }

@@ -1,6 +1,5 @@
 @isTest
 global class ucl_NightlyServiceMock implements HttpCalloutMock{
-    
     global HttpResponse respond(HttpRequest request){
         HttpResponse response = new HttpResponse();
         response.setHeader('contentType', 'application/json');

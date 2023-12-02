@@ -1,8 +1,7 @@
 @IsTest
-public class TestDataFactory {
+public class ucl_TestDataFactory {
     public static void createTestRecords(Integer numLegalAdvisors, Integer numClientsPerAdvisor) {
         List<Legal_Advisor__c> legalAdvisors = new List<Legal_Advisor__c>();
-        
         for(Integer i=0;i<numLegalAdvisors;i++) {
             Legal_Advisor__c a = new Legal_Advisor__c(Name='TestAccount' + i);
             legalAdvisors.add(a);

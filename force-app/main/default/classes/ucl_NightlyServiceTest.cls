@@ -1,24 +1,3 @@
-/**
- * This class contains unit tests for validating the behavior of Apex classes
- * and triggers.
- *
- * Unit tests are class methods that verify whether a particular piece
- * of code is working properly. Unit test methods take no arguments,
- * commit no data to the database, and are flagged with the testMethod
- * keyword in the method definition.
- *
- * All test methods in an org are executed whenever Apex code is deployed
- * to a production org to confirm correctness, ensure code
- * coverage, and prevent regressions. All Apex classes are
- * required to have at least 75% code coverage in order to be deployed
- * to a production org. In addition, all triggers must have some code coverage.
- * 
- * The @isTest class annotation indicates this class only contains test
- * methods. Classes defined with the @isTest annotation do not count against
- * the org size limit for all Apex scripts.
- *
- * See the Apex Language Reference for more information about Testing and Code Coverage.
- */
 @isTest
 private class ucl_NightlyServiceTest {
     @isTest
@@ -56,7 +35,7 @@ private class ucl_NightlyServiceTest {
     @isTest
 	static void testDeletingClients(){
        // Set up test data
-       	TestDataFactory.createTestRecords(1, 2);
+       	ucl_TestDataFactory.createTestRecords(1, 2);
         Test.startTest();
        	Test.setMock(HttpCalloutMock.class, new ucl_NightlyServiceMock());  
         ucl_NightlyService.processData();
@@ -64,5 +43,23 @@ private class ucl_NightlyServiceTest {
         List<Client__c> oldClient = [SELECT Client_Number__c FROM Client__c WHERE First_Name__c = 'Test'];
 
         System.assertEquals(0, oldClient.size());
-    }    
+    } 
+    
+    @isTest
+    static void testErrorHandling(){
+        // Mock an exception that might occur during processing
+        Test.startTest();
+        Test.setMock(HttpCalloutMock.class, new ucl_ErrorMock());
+        ucl_NightlyService.processData();
+        Integer invocations = Limits.getEmailInvocations();
+        Test.stopTest();
+		
+        // Validate that the error has been logged
+        List<Error_Log__c> errorLogs = [SELECT Name FROM Error_Log__c];
+        System.assertNotEquals(0, errorLogs.size());
+        // Validate that an email has been sent
+        system.assertEquals(1, invocations, 'An email should be sent');
+        
+    }
+  
 }

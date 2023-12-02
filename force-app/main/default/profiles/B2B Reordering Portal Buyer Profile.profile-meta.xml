@@ -1,7 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Profile xmlns="http://soap.sforce.com/2006/04/metadata">
     <classAccesses>
+        <apexClass>ucl_DeleteErrorLogs</apexClass>
+        <enabled>false</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_ErrorMock</apexClass>
+        <enabled>false</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ucl_NightlyService</apexClass>
+        <enabled>false</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_NightlyServiceMock</apexClass>
+        <enabled>false</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_NightlyServiceTest</apexClass>
+        <enabled>false</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ucl_TestDataFactory</apexClass>
         <enabled>false</enabled>
     </classAccesses>
     <custom>true</custom>
@@ -32,6 +52,26 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>false</editable>
+        <field>Error_Log__c.Exception_Type__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Error_Log__c.Message__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Error_Log__c.StackTrace__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Error_Log__c.Timestamp__c</field>
+        <readable>false</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
         <field>Legal_Advisor__c.Account_Name__c</field>
         <readable>false</readable>
     </fieldPermissions>
@@ -57,6 +97,9 @@
     </fieldPermissions>
     <layoutAssignments>
         <layout>Client__c-Formato Client</layout>
+    </layoutAssignments>
+    <layoutAssignments>
+        <layout>Error_Log__c-Error Log Layout</layout>
     </layoutAssignments>
     <layoutAssignments>
         <layout>Legal_Advisor__c-Formato Legal Advisor</layout>
