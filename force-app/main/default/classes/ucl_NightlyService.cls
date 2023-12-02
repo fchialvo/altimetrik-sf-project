@@ -80,7 +80,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
   private static void upsertLegalAdvisorRecords(
     List<LegalAdvisorResponse> legalAdvisors
   ) {
-    List<Legal_Advisor__c> legalAdvisorRecords = new List<Legal_Advisor__c>();
+    Set<Legal_Advisor__c> legalAdvisorRecords = new Set<Legal_Advisor__c>();
 
     Set<String> legalAdvisorAccountNumbers = new Set<String>();
     for (LegalAdvisorResponse legalAdvisor : legalAdvisors) {
@@ -117,9 +117,9 @@ public with sharing class ucl_NightlyService implements Schedulable {
         legalAdvisorRecords.add(newLegalAdvisor);
       }
     }
+    List<Legal_Advisor__c> legalAdvisorList = new List<Legal_Advisor__c>(legalAdvisorRecords);
 
-    
-    upsert legalAdvisorRecords Account_Number__c;
+    upsert legalAdvisorList Account_Number__c;
   }
 
   private static Legal_Advisor__c createLegalAdvisorRecord(
@@ -208,7 +208,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
   }
 
   //Helper methods
-  private static Boolean isLegalAdvisorEnabled(
+  public static Boolean isLegalAdvisorEnabled(
     List<Legal_Advisor__c> enabledLegalAdvisors,
     String accountNumber
   ) {
