@@ -5,6 +5,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ucl_DeleteErrorLogsTest</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ucl_ErrorMock</apexClass>
         <enabled>true</enabled>
     </classAccesses>

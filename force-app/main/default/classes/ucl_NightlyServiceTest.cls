@@ -2,8 +2,10 @@
 private class ucl_NightlyServiceTest {
     @isTest
     static void testProcessData() {
+        ucl_NightlyService ns = new ucl_NightlyService();
+        String chron = '0 0 23 * * ?'; //set up schedule for testing apex scheduler
         Test.setMock(HttpCalloutMock.class, new ucl_NightlyServiceMock());
-        ucl_NightlyService.processData();
+        system.schedule('Test Schedule', chron, ns);
 
        	List<Legal_Advisor__c> enabledLegalAdvisors = [SELECT Account_Number__c, Account_Status__c FROM Legal_Advisor__c WHERE Account_Status__c = 'Enabled'];
         List<Legal_Advisor__c> legalAdvisor = [SELECT Account_Name__c, Account_Number__c FROM Legal_Advisor__c WHERE Account_Number__c = '9afccdd3-e7c4-4789-a465-1734886633d2'];
@@ -26,7 +28,8 @@ private class ucl_NightlyServiceTest {
         Test.stopTest();
         List<Legal_Advisor__c> updatedLegalAdvisor = [SELECT Account_Number__c, Account_Status__c FROM Legal_Advisor__c WHERE Account_Number__c = '123'];
         List<Legal_Advisor__c> enabledLegalAdvisors = [SELECT Account_Number__c, Account_Status__c FROM Legal_Advisor__c WHERE Account_Status__c = 'Enabled'];
-
+		
+        System.assertEquals(true, ucl_NightlyService.isLegalAdvisorEnabled(enabledLegalAdvisors, enabledLegalAdvisors[0].Account_Number__c));
         System.assertEquals(1, updatedLegalAdvisor.size());
         System.assertEquals('Disabled', updatedLegalAdvisor[0].Account_Status__c);
         System.assertEquals(false, ucl_NightlyService.isLegalAdvisorEnabled(enabledLegalAdvisors, updatedLegalAdvisor[0].Account_Number__c));
@@ -49,8 +52,10 @@ private class ucl_NightlyServiceTest {
     static void testErrorHandling(){
         // Mock an exception that might occur during processing
         Test.startTest();
+        ucl_NightlyService ns = new ucl_NightlyService();
+        String chron = '0 0 23 * * ?';
         Test.setMock(HttpCalloutMock.class, new ucl_ErrorMock());
-        ucl_NightlyService.processData();
+        system.schedule('Test Schedule', chron, ns);
         Integer invocations = Limits.getEmailInvocations();
         Test.stopTest();
 		
