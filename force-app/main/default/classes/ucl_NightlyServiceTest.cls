@@ -2,11 +2,9 @@
 private class ucl_NightlyServiceTest {
     @isTest
     static void testProcessData() {
-        ucl_NightlyService ns = new ucl_NightlyService();
-        String chron = '0 0 23 * * ?'; //set up schedule for testing apex scheduler
         Test.setMock(HttpCalloutMock.class, new ucl_NightlyServiceMock());
-        system.schedule('Test Schedule', chron, ns);
-
+		ucl_NightlyService.processData();
+        	
        	List<Legal_Advisor__c> enabledLegalAdvisors = [SELECT Account_Number__c, Account_Status__c FROM Legal_Advisor__c WHERE Account_Status__c = 'Enabled'];
         List<Legal_Advisor__c> legalAdvisor = [SELECT Account_Name__c, Account_Number__c FROM Legal_Advisor__c WHERE Account_Number__c = '9afccdd3-e7c4-4789-a465-1734886633d2'];
         System.assertEquals(1, legalAdvisor.size());
@@ -51,20 +49,15 @@ private class ucl_NightlyServiceTest {
     @isTest
     static void testErrorHandling(){
         // Mock an exception that might occur during processing
-        Test.startTest();
-        ucl_NightlyService ns = new ucl_NightlyService();
-        String chron = '0 0 23 * * ?';
         Test.setMock(HttpCalloutMock.class, new ucl_ErrorMock());
-        system.schedule('Test Schedule', chron, ns);
+        Test.startTest();
+        ucl_NightlyService.processData();
         Integer invocations = Limits.getEmailInvocations();
+        system.assertEquals(1, invocations, 'An email should be sent');      
         Test.stopTest();
-		
         // Validate that the error has been logged
         List<Error_Log__c> errorLogs = [SELECT Name FROM Error_Log__c];
         System.assertNotEquals(0, errorLogs.size());
         // Validate that an email has been sent
-        system.assertEquals(1, invocations, 'An email should be sent');
-        
     }
-  
 }

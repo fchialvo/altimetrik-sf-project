@@ -138,9 +138,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
   }
 
   // CLIENTS
-  @TestVisible
   private static Quiddity uploadedBy;
-
   private static void upsertClientRecords(
     List<LegalAdvisorResponse> legalAdvisors
   ) {
