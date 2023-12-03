@@ -25,6 +25,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
     }
   }
 
+  @AuraEnabled
   public static void processData() {
     try {
       String endpoint = 'https://altimetrik-bootcamp.herokuapp.com/LegalAccounts';
