@@ -6,7 +6,7 @@ export default class InvokeService extends LightningElement {
   handleToggleClick() {
     processData()
       .then((result) => {
-        if (result) {
+        if (result && result.success) {
         const event = new ShowToastEvent({
           title: "Success",
           message: "Data processed successfully",
