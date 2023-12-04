@@ -73,5 +73,9 @@
         <members>Heroku_App</members>
         <name>RemoteSiteSetting</name>
     </types>
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
     <version>59.0</version>
 </Package>

@@ -5,13 +5,15 @@ import processData from "@salesforce/apex/ucl_NightlyService.processData";
 export default class InvokeService extends LightningElement {  
   handleToggleClick() {
     processData()
-      .then(() => {
+      .then((result) => {
+        if (result && result.success) {
         const event = new ShowToastEvent({
           title: "Success",
           message: "Data processed successfully",
           variant: "success",
         });
         this.dispatchEvent(event);
+      }
       })
       .catch((error) => {
         const event = new ShowToastEvent({
