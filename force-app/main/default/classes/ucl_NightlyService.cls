@@ -144,22 +144,7 @@ public with sharing class ucl_NightlyService implements Schedulable {
   ) {
     uploadedBy = Request.getCurrent().getQuiddity(); // know if the client is being uploaded by an admin in the Clients record page
     List<Client__c> newClientRecords = new List<Client__c>();
-
-    //fetch client numbers that already exist in the org
-    List<Client__c> existingClients = new List<Client__c>();
-    for (Client__c existingClient : [
-      SELECT
-        Client_Number__c,
-        First_Name__c,
-        Last_Name__c,
-        Email__c,
-        Phone__c,
-        Address__c,
-        External_Id__c
-      FROM Client__c
-    ]) {
-      existingClients.add(existingClient);
-    }
+    List<String> newClientNumbers = new List<String>();
 
     for (LegalAdvisorResponse legalAdvisor : legalAdvisors) {
       {
@@ -167,21 +152,32 @@ public with sharing class ucl_NightlyService implements Schedulable {
           // Create new client or update existing client
           Client__c newClient = createClientRecord(legalAdvisor, client);
           newClientRecords.add(newClient);
+          newClientNumbers.add(newClient.Client_Number__c);
         }
       }
     }
+     //fetch client numbers that already exist in the org, and are no longer coming in the JSON
+     List<Client__c> oldClients = new List<Client__c>();
+     for (Client__c oldClient : [
+       SELECT
+         Client_Number__c,
+         First_Name__c,
+         Last_Name__c,
+         Email__c,
+         Phone__c,
+         Address__c,
+         External_Id__c
+       FROM Client__c
+       WHERE Client_Number__c NOT IN :newClientNumbers
+     ]) {
+       oldClients.add(oldClient);
+     }
     switch on uploadedBy {
       when VF {
         upsert newClientRecords;
       }
       when else {
-        List<Client__c> clientsToDelete = new List<Client__c>();
-        for (Client__c existingClient : existingClients) {
-          if (!newClientRecords.contains(existingClient)) {
-            clientsToDelete.add(existingClient); //if an existing client is no longer coming in the JSON file, it has to be deleted from the org.
-          }
-        }
-        delete clientsToDelete;
+        delete oldClients; //if an existing client is no longer coming in the JSON file, it has to be deleted from the org.
       }
     }
     upsert newClientRecords External_Id__c;
